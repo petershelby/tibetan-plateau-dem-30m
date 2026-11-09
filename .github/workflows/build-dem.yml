@@ -1,0 +1,47 @@
+name: Build Tibetan Plateau DEM 30m
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GDAL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdal-bin python3
+          gdalinfo --version
+          df -h /
+
+      - name: Build mosaic
+        run: python3 scripts/build.py
+
+      - name: List release assets
+        run: ls -lh release
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1
+          name: Tibetan Plateau DEM 30m (Copernicus GLO-30)
+          body: |
+            Copernicus GLO-30 DEM mosaic for 75-105E, 25-41N.
+
+            - Native 1 arc-second grid, EPSG:4326, EGM2008 heights.
+            - Int16 metres, nodata -9999, DEFLATE-compressed BigTIFF.
+            - 90 m overview included.
+
+            Contains modified Copernicus DEM data (c) DLR e.V. 2010-2014
+            and (c) Airbus Defence and Space GmbH 2014-2018, provided under
+            COPERNICUS by the European Union and ESA. All rights reserved.
+          files: release/*
+          fail_on_unmatched_files: true
